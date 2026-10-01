@@ -10,6 +10,8 @@ from app.schemas.auth import (
     InternalPersonIn,
     InternalPersonOut,
     InternalPersonStateOut,
+    InternalResendIn,
+    InternalVerifyEmailIn,
     ResetIn,
     VerifyIn,
     VerifyOut,
@@ -65,6 +67,8 @@ def upsert_person(body: InternalPersonIn, service: PersonService = Depends(get_p
 def person_state(person_id: int, service: PersonService = Depends(get_person_service)):
     person = service.get_person(person_id)
     payload = InternalPersonStateOut(
+        full_name=person.full_name,
+        email=person.email,
         is_active=person.is_active,
         email_verified=person.email_verified,
         auth_version=person.auth_version,
@@ -106,3 +110,26 @@ def reset_password(request: Request, body: ResetIn, service: AuthService = Depen
 def change_password(request: Request, body: InternalChangeIn, service: AuthService = Depends(get_auth_service)):
     service.change_for_system(body.person_id, body.current_password, body.new_password)
     return json_data(None)
+
+
+@router.post(
+    "/auth/verify-email",
+    response_model=Envelope[None],
+    summary="Repasse de confirmação de e-mail",
+    description="O sistema de negócio envia o token do link. O hash do token fica só aqui.",
+)
+def verify_email(body: InternalVerifyEmailIn, service: AuthService = Depends(get_auth_service)):
+    service.verify_email(body.token)
+    return json_data(None)
+
+
+@router.post(
+    "/auth/resend-verification",
+    response_model=Envelope[MessageOut],
+    summary="Repasse de reenvio de verificação",
+    description="O sistema de negócio envia o e-mail e a redirect_url allowlisted. A resposta não revela se o e-mail existe.",
+)
+@limiter.limit("10/minute")
+def resend_verification(request: Request, body: InternalResendIn, service: AuthService = Depends(get_auth_service)):
+    service.resend_verification(str(body.email), body.redirect_url)
+    return json_data(MessageOut(message=FORGOT_MESSAGE).model_dump())

@@ -53,12 +53,23 @@ class InternalPersonOut(BaseModel):
 
 
 class InternalPersonStateOut(BaseModel):
+    full_name: str
+    email: str
     is_active: bool
     email_verified: bool
     auth_version: int
 
 
 class InternalForgotIn(BaseModel):
+    email: EmailStr
+    redirect_url: str
+
+
+class InternalVerifyEmailIn(BaseModel):
+    token: str = Field(min_length=10, max_length=200)
+
+
+class InternalResendIn(BaseModel):
     email: EmailStr
     redirect_url: str
 
