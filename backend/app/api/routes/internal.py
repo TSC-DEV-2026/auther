@@ -5,6 +5,7 @@ from app.api.dependencies.services import get_auth_service, get_person_service
 from app.api.responses import json_data
 from app.core.limiter import limiter
 from app.schemas.auth import (
+    InternalAccountIn,
     InternalChangeIn,
     InternalForgotIn,
     InternalPersonIn,
@@ -69,6 +70,31 @@ def person_state(person_id: int, service: PersonService = Depends(get_person_ser
     payload = InternalPersonStateOut(
         full_name=person.full_name,
         email=person.email,
+        cpf=person.cpf,
+        is_active=person.is_active,
+        email_verified=person.email_verified,
+        auth_version=person.auth_version,
+    )
+    return json_data(payload.model_dump())
+
+
+@router.put(
+    "/people/{person_id}",
+    response_model=Envelope[InternalPersonStateOut],
+    summary="Atualizar nome e e-mail",
+    description="O sistema de negócio corrige nome e e-mail. O CPF não muda.",
+)
+def update_account(person_id: int, body: InternalAccountIn, service: PersonService = Depends(get_person_service)):
+    person = service.update_from_system(
+        person_id,
+        full_name=body.full_name,
+        email=str(body.email),
+        redirect_url=body.redirect_url,
+    )
+    payload = InternalPersonStateOut(
+        full_name=person.full_name,
+        email=person.email,
+        cpf=person.cpf,
         is_active=person.is_active,
         email_verified=person.email_verified,
         auth_version=person.auth_version,

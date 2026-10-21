@@ -36,6 +36,22 @@ def services():
     return people, refreshes, tokens, email, auth, person_service
 
 
+def test_sistema_atualiza_nome_e_email_sem_trocar_cpf():
+    people, _, _, email, _auth, person_service = services()
+    person = people.save(make_person())
+    updated = person_service.update_from_system(
+        person.id,
+        full_name="Ana Lima",
+        email="nova@x.com",
+        redirect_url="http://localhost:5173",
+    )
+    assert updated.full_name == "Ana Lima"
+    assert updated.email == "nova@x.com"
+    assert updated.cpf == "12345678900"
+    assert updated.email_verified is False
+    assert email.sent
+
+
 def test_verify_aceita_email_nao_verificado():
     people, _, _, _, auth, _ = services()
     person = people.save(make_person(email_verified=False))
