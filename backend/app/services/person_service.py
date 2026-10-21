@@ -71,6 +71,25 @@ class PersonService:
         self._send_invite(person, settings.PUBLIC_APP_URL)
         return person
 
+    def update_from_system(self, person_id: int, *, full_name: str, email: str, redirect_url: str) -> Person:
+        person = self.get_person(person_id)
+        name = full_name.strip()
+        if not name:
+            raise AppError(400, "Informe o nome")
+        normalized = normalize_email(email)
+        existing = self.people.get_by_email(normalized)
+        if existing is not None and existing.id != person.id:
+            raise AppError(400, "E-mail já cadastrado")
+        changed_email = normalized != person.email
+        person.full_name = name
+        if changed_email:
+            person.email = normalized
+            person.email_verified = False
+        self.people.save(person)
+        if changed_email and redirect_url:
+            self._send_verification(person, redirect_url)
+        return person
+
     def update_person(self, person: Person, data: PersonUpdate, *, actor_id: int) -> Person:
         changed_email = False
         if "cpf" in data.model_fields_set and data.cpf is not None:
