@@ -51,7 +51,7 @@ def verify(request: Request, body: VerifyIn, service: AuthService = Depends(get_
     "/people",
     response_model=Envelope[InternalPersonOut],
     summary="Achar ou criar pessoa",
-    description="CPF existente devolve o mesmo person_id, sem trocar senha nem e-mail. Sem senha, dispara o convite.",
+    description="CPF existente devolve o mesmo person_id, sem trocar senha nem e-mail. CPF novo exige e-mail. Sem senha, dispara o convite.",
 )
 def upsert_person(body: InternalPersonIn, service: PersonService = Depends(get_person_service)):
     person_id, created = service.upsert_from_system(body)
