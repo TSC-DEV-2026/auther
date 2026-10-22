@@ -41,7 +41,7 @@ class VerifyOut(BaseModel):
 
 class InternalPersonIn(BaseModel):
     cpf: str = Field(min_length=11, max_length=14)
-    email: EmailStr
+    email: EmailStr | None = None
     full_name: str = Field(min_length=1, max_length=255)
     password: str | None = Field(default=None, max_length=72)
     redirect_url: str | None = None

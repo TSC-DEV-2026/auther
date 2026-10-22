@@ -134,6 +134,8 @@ class PersonService:
         existing = self.people.get_by_cpf(cpf)
         if existing is not None:
             return existing.id, False
+        if data.email is None or not str(data.email).strip():
+            raise AppError(400, "Informe o e-mail")
         password = data.password or None
         person = self._insert(
             cpf=cpf,

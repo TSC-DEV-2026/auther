@@ -171,6 +171,36 @@ def test_cpf_existente_nao_troca_senha_nem_email():
     assert email.sent == []
 
 
+def test_cpf_novo_sem_email_recusa():
+    _, _, _, _, _, person_service = services()
+    with pytest.raises(AppError) as caught:
+        person_service.upsert_from_system(
+            InternalPersonIn(
+                cpf="12345678900",
+                full_name="Ana",
+                redirect_url="http://localhost:5174",
+            )
+        )
+    assert caught.value.status_code == 400
+    assert caught.value.message == "Informe o e-mail"
+
+
+def test_cpf_existente_sem_email_devolve_o_mesmo_id():
+    people, _, _, email, _, person_service = services()
+    person = people.save(make_person())
+    person_id, created = person_service.upsert_from_system(
+        InternalPersonIn(
+            cpf="12345678900",
+            full_name="Outra",
+            redirect_url="http://localhost:5174",
+        )
+    )
+    assert created is False
+    assert person_id == person.id
+    assert person.email == "ana@x.com"
+    assert email.sent == []
+
+
 def test_convite_sem_senha_e_cadastro_com_senha():
     _, _, _, email, _, person_service = services()
     person_id, created = person_service.upsert_from_system(
