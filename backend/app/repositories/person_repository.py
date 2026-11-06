@@ -10,6 +10,9 @@ class PersonRepository:
     def get_by_id(self, person_id: int) -> Person | None:
         return self.db.query(Person).filter(Person.id == person_id).one_or_none()
 
+    def list_by_ids(self, person_ids: list[int]) -> list[Person]:
+        return self.db.query(Person).filter(Person.id.in_(person_ids)).all()
+
     def get_by_cpf(self, cpf: str) -> Person | None:
         return self.db.query(Person).filter(Person.cpf == cpf).one_or_none()
 

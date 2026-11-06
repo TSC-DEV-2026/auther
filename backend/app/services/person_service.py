@@ -61,6 +61,20 @@ class PersonService:
             raise AppError(404, "Pessoa não encontrada")
         return person
 
+    def lookup_names(self, person_ids: list[int]) -> list[Person]:
+        if len(person_ids) > 100:
+            raise AppError(400, "No máximo 100 pessoas")
+        unique: list[int] = []
+        seen: set[int] = set()
+        for person_id in person_ids:
+            if person_id in seen:
+                continue
+            seen.add(person_id)
+            unique.append(person_id)
+        if not unique:
+            return []
+        return self.people.list_by_ids(unique)
+
     def create_person(self, data: PersonCreate) -> Person:
         person = self._insert(
             cpf=normalize_cpf(data.cpf),

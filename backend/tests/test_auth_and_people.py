@@ -1,7 +1,11 @@
+import json
+
 import pytest
 from jose import JWTError
 
+from app.api.routes.internal import lookup_people
 from app.core.exceptions import AppError
+from app.schemas.auth import InternalLookupIn, InternalLookupOut
 from app.core.security import decode_access_token, decode_refresh_token, hash_password, verify_password
 from app.models.person import Person
 from app.schemas.auth import InternalPersonIn
@@ -250,6 +254,45 @@ def test_admin_nao_desativa_a_si_mesmo():
         person_service.update_person(admin, PersonUpdate(is_active=False), actor_id=admin.id)
     assert caught.value.status_code == 400
     assert admin.is_active is True
+
+
+def test_lookup_devolve_so_nome_de_quem_existe():
+    people, _, _, _, _, person_service = services()
+    ana = people.save(make_person())
+    bia = people.save(make_person(cpf="98765432100", email="bia@x.com", full_name="Bia"))
+    before = people.by_id_calls
+    response = lookup_people(
+        InternalLookupIn(person_ids=[bia.id, bia.id, ana.id, 99]),
+        person_service,
+    )
+    payload = json.loads(response.body)
+    assert response.status_code == 200
+    assert payload["error"] is None
+    assert {row["person_id"]: row for row in payload["data"]} == {
+        ana.id: {"person_id": ana.id, "full_name": "Ana"},
+        bia.id: {"person_id": bia.id, "full_name": "Bia"},
+    }
+    assert set(InternalLookupIn.model_fields) == {"person_ids"}
+    assert set(InternalLookupOut.model_fields) == {"person_id", "full_name"}
+    assert people.by_ids_calls == 1
+    assert people.last_ids == [bia.id, ana.id, 99]
+    assert people.by_id_calls == before
+
+
+def test_lookup_vazio_nao_consulta_o_banco():
+    people, _, _, _, _, person_service = services()
+    people.save(make_person())
+    assert person_service.lookup_names([]) == []
+    assert people.by_ids_calls == 0
+    assert people.by_id_calls == 0
+
+
+def test_lookup_acima_de_100_responde_400():
+    people, _, _, _, _, person_service = services()
+    with pytest.raises(AppError) as caught:
+        person_service.lookup_names(list(range(1, 102)))
+    assert caught.value.status_code == 400
+    assert people.by_ids_calls == 0
 
 
 def test_convite_do_admin_nao_grava_senha():

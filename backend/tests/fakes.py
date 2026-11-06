@@ -8,6 +8,9 @@ class MemoryPeople:
     def __init__(self) -> None:
         self.rows: dict[int, Person] = {}
         self.seq = 1
+        self.by_id_calls = 0
+        self.by_ids_calls = 0
+        self.last_ids: list[int] = []
 
     def save(self, person: Person) -> Person:
         if person.id is None:
@@ -17,7 +20,14 @@ class MemoryPeople:
         return person
 
     def get_by_id(self, person_id: int) -> Person | None:
+        self.by_id_calls += 1
         return self.rows.get(person_id)
+
+    def list_by_ids(self, person_ids: list[int]) -> list[Person]:
+        self.by_ids_calls += 1
+        self.last_ids = list(person_ids)
+        wanted = set(person_ids)
+        return [person for person in self.rows.values() if person.id in wanted]
 
     def get_by_cpf(self, cpf: str) -> Person | None:
         return next((person for person in self.rows.values() if person.cpf == cpf), None)
