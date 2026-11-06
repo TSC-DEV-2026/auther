@@ -52,6 +52,15 @@ class InternalPersonOut(BaseModel):
     created: bool
 
 
+class InternalLookupIn(BaseModel):
+    person_ids: list[int]
+
+
+class InternalLookupOut(BaseModel):
+    person_id: int
+    full_name: str
+
+
 class InternalPersonStateOut(BaseModel):
     full_name: str
     email: str

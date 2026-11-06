@@ -8,6 +8,8 @@ from app.schemas.auth import (
     InternalAccountIn,
     InternalChangeIn,
     InternalForgotIn,
+    InternalLookupIn,
+    InternalLookupOut,
     InternalPersonIn,
     InternalPersonOut,
     InternalPersonStateOut,
@@ -57,6 +59,21 @@ def upsert_person(body: InternalPersonIn, service: PersonService = Depends(get_p
     person_id, created = service.upsert_from_system(body)
     status_code = 201 if created else 200
     return json_data(InternalPersonOut(person_id=person_id, created=created).model_dump(), status_code=status_code)
+
+
+@router.post(
+    "/people/lookup",
+    response_model=Envelope[list[InternalLookupOut]],
+    summary="Nomes por identificador",
+    description="Uma consulta pelos person_id recebidos. Devolve person_id e full_name de quem existe. No máximo 100.",
+)
+def lookup_people(body: InternalLookupIn, service: PersonService = Depends(get_person_service)):
+    people = service.lookup_names(body.person_ids)
+    payload = [
+        InternalLookupOut(person_id=person.id, full_name=person.full_name).model_dump()
+        for person in people
+    ]
+    return json_data(payload)
 
 
 @router.get(
