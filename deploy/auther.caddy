@@ -1,0 +1,4 @@
+auther.zioncor.com.br {
+	encode gzip
+	reverse_proxy auther-web:80
+}
