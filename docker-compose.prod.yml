@@ -1,12 +1,25 @@
+name: auther
+
 services:
-  api:
+  auther-api:
     build: ./backend
+    container_name: auther-api
     env_file: ./backend/.env
     restart: unless-stopped
-  web:
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips=*"]
+    networks:
+      - zioncor
+
+  auther-web:
     build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - api
+    container_name: auther-web
     restart: unless-stopped
+    depends_on:
+      - auther-api
+    networks:
+      - zioncor
+
+networks:
+  zioncor:
+    external: true
+    name: zioncor-prod_zioncor
